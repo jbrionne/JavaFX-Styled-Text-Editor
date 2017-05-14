@@ -20,21 +20,22 @@ Functions :
 
 Autocompletion:
 
-![alt tag](https://cloud.githubusercontent.com/assets/10994894/25301892/0c6ad774-2732-11e7-861b-04e98f9bfd7e.png)
+![alt tag](https://cloud.githubusercontent.com/assets/10994894/26037376/c7fd1b98-38f1-11e7-8ee2-82bf8b4bb593.png)
 
 Tooltip:
 
-![alt tag](https://cloud.githubusercontent.com/assets/10994894/25301902/22df10ba-2732-11e7-8ae6-a37be6a0c044.png)
+![alt tag](https://cloud.githubusercontent.com/assets/10994894/26037407/4cdb1798-38f2-11e7-9b0b-ba2155d2d35b.png)
+
 
 Multi-styles:
 (first line in error and text selection styles for example)
 
-![alt tag](https://cloud.githubusercontent.com/assets/10994894/25301905/314a5f9c-2732-11e7-85ee-daa9aa40f74d.png)
+![alt tag](https://cloud.githubusercontent.com/assets/10994894/26037414/6deef4ae-38f2-11e7-9434-0be1d2821082.png)
 
 Action menu:
 Example 'Refactor action'
 
-![alt tag](https://cloud.githubusercontent.com/assets/10994894/25313883/9a3aae06-2838-11e7-8267-ec2cd7463e24.png)
+![alt tag](https://cloud.githubusercontent.com/assets/10994894/26037419/870c5c24-38f2-11e7-84c8-993719a58f48.png)
 
 Details:
 

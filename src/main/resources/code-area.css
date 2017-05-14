@@ -1,0 +1,20 @@
+/** global style **/
+.code-area {
+    background-color: #333333;
+    line-height:1.25;
+    font-size:12px;
+}
+
+
+/**
+name-type-priority
+**/
+
+/** default style of text **/
+.default-fill-1 { color: white;  }
+
+/** Errors **/
+.error-underline-1 {  border-bottom: solid 1px red; }
+
+/** selection **/
+.selected-background-1 { background-color:#829999; }

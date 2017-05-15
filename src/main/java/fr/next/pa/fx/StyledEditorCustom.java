@@ -18,6 +18,7 @@ public class StyledEditorCustom extends Control {
 	public StyledEditorCustom(DisplayOnAction displayOnAction) {
 		this.displayOnAction = displayOnAction;
 		getStyleClass().add(Style.CODEAREA);
+		this.setSkin(createDefaultSkin());
 	}
 
 	@Override

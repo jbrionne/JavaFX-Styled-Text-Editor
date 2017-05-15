@@ -27,6 +27,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
+import javafx.scene.input.MouseButton;
 
 /**
  * Skin of styled editor. Based on HTML tags. Update the style on action.
@@ -95,6 +96,9 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 
 	/** monitor to avoid concurrent modification on highLights **/
 	private Object monitorHighLights = new Object();
+	
+	/** previous caret position **/
+	private int[] previousCaretPosition;
 
 	public StyledEditorSkinCustom(StyledEditorCustom htmlEditor, DisplayOnAction displayOnAction) {
 		super(htmlEditor, new StyledEditorBehaviorCustom(htmlEditor, displayOnAction));
@@ -170,6 +174,9 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 			Platform.runLater(() -> {
 				webView.requestLayout();
 				scrollTo(webView, scrollHPosition, scrollVPosition);
+				if(previousCaretPosition != null && caretBounds != null) {
+					simulateClick(previousCaretPosition[0], previousCaretPosition[1], caretBounds.getX(), caretBounds.getY());
+				}
 			});
 
 			double totalWork = webView.getEngine().getLoadWorker().getTotalWork();
@@ -227,8 +234,8 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 				String info[] = caretInfo.split(" ");
 				caretColPos = Integer.valueOf(info[2]);
 				caretLinePos = Integer.valueOf(info[9]);
-				int[] x = webPage.getClientTextLocation(0);
-				this.caretBounds = webPage.getPageClient().windowToScreen(new WCPoint(x[0], x[1] + x[3]));
+				this.previousCaretPosition = webPage.getClientTextLocation(0);
+				this.caretBounds = webPage.getPageClient().windowToScreen(new WCPoint(previousCaretPosition[0], previousCaretPosition[1] + previousCaretPosition[3]));
 				this.scrollHPosition = getHScrollValue(webView);
 				this.scrollVPosition = getVScrollValue(webView);
 			}
@@ -424,6 +431,15 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 			index++;
 		}
 		return index;
+	}
+	
+	private void simulateClick(double x, double y, double screenX, double screenY) {
+		webView.fireEvent(new MouseEvent(null, webView, MouseEvent.MOUSE_PRESSED, x, y, screenX,
+				screenY, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, true,
+				false, false, null));
+		webView.fireEvent(new MouseEvent(null, webView, MouseEvent.MOUSE_RELEASED, x, y, screenX,
+				screenY, MouseButton.PRIMARY, 1, false, false, false, false, false, false, false, true,
+				false, false, null));
 	}
 
 	/**

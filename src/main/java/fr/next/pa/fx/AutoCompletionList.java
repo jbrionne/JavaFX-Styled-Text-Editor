@@ -71,7 +71,8 @@ class AutoCompletionList {
 	private ListView<TargetElement> createSuggestionList(DisplayOnAction helperAction, final int start, String template) {
 
 		ListView<TargetElement> list = new ListView<>();
-		list.getStyleClass().add(Style.LIST);
+		list.getStylesheets().add(Style.CSSFILE);
+		list.getStyleClass().add(Style.AUTOLIST);
 		autoCompletionElements = helperAction.autocompletion(start, template);
 
 		ObservableList<TargetElement> items = FXCollections.observableArrayList(Arrays.asList(autoCompletionElements));

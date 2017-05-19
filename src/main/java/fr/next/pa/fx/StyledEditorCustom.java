@@ -7,6 +7,7 @@ import fr.next.pa.api.DisplayOnAction;
 import javafx.print.PrinterJob;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
+import javafx.scene.layout.GridPane;
 
 /**
  * Redirect actions to StyledEditorSkinCustom.
@@ -17,6 +18,7 @@ public class StyledEditorCustom extends Control {
 
 	public StyledEditorCustom(DisplayOnAction displayOnAction) {
 		this.displayOnAction = displayOnAction;
+		getStylesheets().add(Style.CSSFILE);
 		getStyleClass().add(Style.CODEAREA);
 		this.setSkin(createDefaultSkin());
 	}
@@ -81,4 +83,5 @@ public class StyledEditorCustom extends Control {
 	public void actionPopup(ActionInputCallBack actionInputCallBack, String msg) {
 		skin().actionPopup(actionInputCallBack, msg);
 	}
+
 }

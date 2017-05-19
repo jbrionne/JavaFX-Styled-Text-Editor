@@ -7,7 +7,7 @@ You need a simple editor, multiplatform, with the possibility to implement your 
 Three files :
 - Your core system must implements the DisplayOnAction interface. See Example.java
 - MainEditor.java : class Main with the instantiation of 'Scene'
-- main.css and code-area.css : css files for the style.
+- code-area.css : css file for the style.
 
 Functions :
 - text editor

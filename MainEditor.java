@@ -22,7 +22,6 @@ public class MainEditor extends Application {
 		primaryStage.setTitle("EditorFx");
 		StackPane root = new StackPane();
 		Scene scene = new Scene(root, 300, 250);
-		scene.getStylesheets().add("main.css");
 		primaryStage.setScene(scene);
 
 		final Example media = new Example();

@@ -16,6 +16,7 @@ import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.css.PseudoClass;
+import javafx.geometry.Bounds;
 import javafx.print.PrinterJob;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -51,8 +52,8 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 
 	/** current HTML text **/
 	private String cachedHTMLText = "<html><head><link rel=\"stylesheet\" href=\""
-			+ getClass().getResource("/code-area.css")
-			+ "\"></head><body class=\"code-area default-fill-1\" contenteditable=\"true\"></body></html>";
+			+ getClass().getResource("/" + Style.CSSFILE)
+			+ "\"></head><body class=\"" + Style.CODEAREA + " " + Style.DEFAULT +"\" contenteditable=\"true\"></body></html>";
 
 	/** remove component on demand **/
 	private ListChangeListener<Node> itemsListener = c -> {
@@ -86,10 +87,10 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	private PauseTransition pauseUpdateStyle;
 
 	/** mouse position scene X **/
-	private double mouseSceneX;
+	private double mouseScreenX;
 
 	/** mouse position scene Y **/
-	private double mouseSceneY;
+	private double mouseScreenY;
 
 	/** focus **/
 	private static PseudoClass CONTAINS_FOCUS_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("contains-focus");
@@ -99,6 +100,9 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	
 	/** previous caret position **/
 	private int[] previousCaretPosition;
+	
+	/** bounds in scene **/
+	private Bounds boundsInScene;
 
 	public StyledEditorSkinCustom(StyledEditorCustom htmlEditor, DisplayOnAction displayOnAction) {
 		super(htmlEditor, new StyledEditorBehaviorCustom(htmlEditor, displayOnAction));
@@ -145,7 +149,6 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 				public void run() {
 					if (newValue) {
 						webView.requestFocus();
-
 						scrollTo(webView, scrollHPosition, scrollVPosition);
 					}
 				}
@@ -169,13 +172,13 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 				}
 			});
 		});
-
 		webView.getEngine().getLoadWorker().workDoneProperty().addListener((observable, oldValue, newValue) -> {
 			Platform.runLater(() -> {
 				webView.requestLayout();
 				scrollTo(webView, scrollHPosition, scrollVPosition);
 				if(previousCaretPosition != null && caretBounds != null) {
-					simulateClick(previousCaretPosition[0], previousCaretPosition[1], caretBounds.getX(), caretBounds.getY());
+					//we must had the caret size/2. Easy solution : + 1.
+					simulateClick(previousCaretPosition[0] + 1, previousCaretPosition[1] + 1, caretBounds.getX() + 1, caretBounds.getY() + 1);
 				}
 			});
 
@@ -186,8 +189,8 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		});
 
 		webView.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
-			this.mouseSceneX = e.getSceneX();
-			this.mouseSceneY = e.getSceneY();
+			this.mouseScreenX = e.getScreenX();
+			this.mouseScreenY = e.getScreenY();
 		});
 
 		webView.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> Platform.runLater(() -> {
@@ -226,7 +229,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 * the value is equals to 0).
 	 */
 	private void updateCaretAndScrollPosition() {
-		if (getSelectedText().equals("")) {
+		if (getSelectedText().equals("") && !getBehavior().isShowing()) {
 			String renderTree = webPage.getRenderTree(webPage.getMainFrame());
 			int caretIndex = renderTree.lastIndexOf("caret: ");
 			if (caretIndex != -1) {
@@ -235,7 +238,8 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 				caretColPos = Integer.valueOf(info[2]);
 				caretLinePos = Integer.valueOf(info[9]);
 				this.previousCaretPosition = webPage.getClientTextLocation(0);
-				this.caretBounds = webPage.getPageClient().windowToScreen(new WCPoint(previousCaretPosition[0], previousCaretPosition[1] + previousCaretPosition[3]));
+				this.caretBounds = webPage.getPageClient().windowToScreen(new WCPoint(previousCaretPosition[0] + previousCaretPosition[2], previousCaretPosition[1] + previousCaretPosition[3]));
+				this.boundsInScene = webView.localToScene(webView.getBoundsInLocal());
 				this.scrollHPosition = getHScrollValue(webView);
 				this.scrollVPosition = getVScrollValue(webView);
 			}
@@ -434,10 +438,10 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	}
 	
 	private void simulateClick(double x, double y, double screenX, double screenY) {
-		webView.fireEvent(new MouseEvent(null, webView, MouseEvent.MOUSE_PRESSED, x, y, screenX,
+		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED, boundsInScene.getMinX() + x, boundsInScene.getMinY() + y, screenX,
 				screenY, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, true,
 				false, false, null));
-		webView.fireEvent(new MouseEvent(null, webView, MouseEvent.MOUSE_RELEASED, x, y, screenX,
+		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED, boundsInScene.getMinX() + x, boundsInScene.getMinY() + y, screenX,
 				screenY, MouseButton.PRIMARY, 1, false, false, false, false, false, false, false, true,
 				false, false, null));
 	}
@@ -547,6 +551,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 * @return mouse screen coordinates.
 	 */
 	public WCPoint getMouseBounds() {
-		return webPage.getPageClient().windowToScreen(new WCPoint((float) mouseSceneX, (float) mouseSceneY));
+		return new WCPoint((float) mouseScreenX, (float) mouseScreenY);
 	}
+
 }

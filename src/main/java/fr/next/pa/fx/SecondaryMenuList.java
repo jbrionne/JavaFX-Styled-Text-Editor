@@ -68,6 +68,7 @@ class SecondaryMenuList {
 	private ListView<TargetElement> createSuggestionList(DisplayOnAction helperAction, final int start) {
 
 		ListView<TargetElement> list = new ListView<>();
+		list.getStylesheets().add(Style.CSSFILE);
 		list.getStyleClass().add(Style.SECONDARYMENU);
 		secondaryMenuElements = helperAction.secondaryMenu(start);
 

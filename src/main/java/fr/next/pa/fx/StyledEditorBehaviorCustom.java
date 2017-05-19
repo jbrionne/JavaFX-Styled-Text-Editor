@@ -79,6 +79,7 @@ public class StyledEditorBehaviorCustom extends BehaviorBase<StyledEditorCustom>
 		// prepare tooltip popup
 		this.tooltip = new Popup();
 		this.tooltipMsg = new Label();
+		tooltipMsg.getStylesheets().add(Style.CSSFILE);
 		tooltipMsg.getStyleClass().add(Style.TOOLTIP);
 		tooltip.getContent().add(tooltipMsg);
 		tooltip.hide();
@@ -95,6 +96,13 @@ public class StyledEditorBehaviorCustom extends BehaviorBase<StyledEditorCustom>
 		if (e.isSecondaryButtonDown()) {
 			showSecondayMenu();
 		}
+	}
+	
+	/**
+	 * @return true if one of popup is currently shown.
+	 */
+	public boolean isShowing() {
+		return autocompletionPopup.isShowing() || secondaryMenuPopup.isShowing() || tooltip.isShowing();
 	}
 
 	/**
@@ -179,10 +187,10 @@ public class StyledEditorBehaviorCustom extends BehaviorBase<StyledEditorCustom>
 		menuPopup.setAutoHide(false);
 
 		Label msgLabel = new Label(msg);
-		msgLabel.getStyleClass().add(Style.TOOLTIP);
 		TextField input = new TextField();
 		VBox popUpVBox = new VBox(5, msgLabel, input);
-		popUpVBox.getStyleClass().add(Style.TOOLTIP);
+		popUpVBox.getStylesheets().add(Style.CSSFILE);
+		popUpVBox.getStyleClass().add(Style.ACTION);
 		menuPopup.getContent().addAll(popUpVBox);
 		menuPopup.show(getControl(), getControl().getCaretBounds().getX(), getControl().getCaretBounds().getY());
 

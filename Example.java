@@ -22,8 +22,6 @@ public class Example implements Runnable, DisplayOnAction, ActionInputCallBack {
 	private static final String DEFAULT = "default";
 
 	private static final String EOL = System.lineSeparator();
-	private static final String AFF = "=";
-	private static final String GROUP = "X_SB_X";
 	
 	private Map<Integer, Set<Message>> highlightsOffset = new HashMap<>();
 

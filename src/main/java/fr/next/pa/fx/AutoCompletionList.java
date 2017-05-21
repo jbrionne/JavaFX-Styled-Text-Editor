@@ -117,7 +117,7 @@ class AutoCompletionList {
 		TargetElement s = list.getSelectionModel().getSelectedItem();
 		if (s != null) {
 			final String selectedSuggestion = s.getText().substring(s.getPosition());
-			textComponent.insertText(insertPosition, selectedSuggestion);
+			textComponent.insertTextAndUpdateCaretPosition(insertPosition, selectedSuggestion);
 		}
 		hide();
 	}

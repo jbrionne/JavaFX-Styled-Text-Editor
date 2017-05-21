@@ -1,12 +1,16 @@
 package fr.next.pa.fx;
 
+import java.awt.AWTException;
+import java.awt.Robot;
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.scene.control.skin.BehaviorSkinBase;
 import com.sun.javafx.scene.control.skin.FXVK;
 import com.sun.javafx.webkit.Accessor;
 import com.sun.webkit.WebPage;
+import com.sun.webkit.event.WCKeyEvent;
 import com.sun.webkit.graphics.WCPoint;
 
 import fr.next.pa.api.ActionInputCallBack;
@@ -22,13 +26,16 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.KeyCode;
+import javafx.event.Event;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Skin of styled editor. Based on HTML tags. Update the style on action.
@@ -52,8 +59,11 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 
 	/** current HTML text **/
 	private String cachedHTMLText = "<html><head><link rel=\"stylesheet\" href=\""
-			+ getClass().getResource("/" + Style.CSSFILE)
-			+ "\"></head><body class=\"" + Style.CODEAREA + " " + Style.DEFAULT +"\" contenteditable=\"true\"></body></html>";
+			+ getClass().getResource("/" + Style.CSSFILE) + "\"></head><body class=\"" + Style.CODEAREA + " "
+			+ Style.DEFAULT + "\" contenteditable=\"true\"></body></html>";
+
+	/** autocompletion message **/
+	private String autoCompletionMessage;
 
 	/** remove component on demand **/
 	private ListChangeListener<Node> itemsListener = c -> {
@@ -97,10 +107,10 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 
 	/** monitor to avoid concurrent modification on highLights **/
 	private Object monitorHighLights = new Object();
-	
+
 	/** previous caret position **/
 	private int[] previousCaretPosition;
-	
+
 	/** bounds in scene **/
 	private Bounds boundsInScene;
 
@@ -176,9 +186,34 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 			Platform.runLater(() -> {
 				webView.requestLayout();
 				scrollTo(webView, scrollHPosition, scrollVPosition);
-				if(previousCaretPosition != null && caretBounds != null) {
-					//we must had the caret size/2. Easy solution : + 1.
-					simulateClick(previousCaretPosition[0] + 1, previousCaretPosition[1] + 1, caretBounds.getX() + 1, caretBounds.getY() + 1);
+				if (previousCaretPosition != null && caretBounds != null) {
+					// we must had the caret size/2. Easy solution : + 1.
+					simulateClick(previousCaretPosition[0] + 1, previousCaretPosition[1] + 1, caretBounds.getX() + 1,
+							caretBounds.getY() + 1);
+					try {
+						Thread.sleep(10);
+						if (autoCompletionMessage != null) {
+							for (int i = 0; i < autoCompletionMessage.length(); i++) {
+								final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+								executor.schedule(new Runnable() {
+									@Override
+									public void run() {
+										Platform.runLater(() -> {
+											webView.fireEvent(new KeyEvent(webView, webView, KeyEvent.KEY_PRESSED, "",
+													"", KeyCode.RIGHT, false, false, false, false));
+											webView.fireEvent(new KeyEvent(webView, webView, KeyEvent.KEY_RELEASED, "",
+													"", KeyCode.RIGHT, false, false, false, false));
+										});
+									}
+									//Arbitrary time, we hope that the thread will be ready to receive new events !
+								}, 100, TimeUnit.MILLISECONDS);
+							}
+							autoCompletionMessage = null;
+						}
+
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
 				}
 			});
 
@@ -238,7 +273,9 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 				caretColPos = Integer.valueOf(info[2]);
 				caretLinePos = Integer.valueOf(info[9]);
 				this.previousCaretPosition = webPage.getClientTextLocation(0);
-				this.caretBounds = webPage.getPageClient().windowToScreen(new WCPoint(previousCaretPosition[0] + previousCaretPosition[2], previousCaretPosition[1] + previousCaretPosition[3]));
+				this.caretBounds = webPage.getPageClient()
+						.windowToScreen(new WCPoint(previousCaretPosition[0] + previousCaretPosition[2],
+								previousCaretPosition[1] + previousCaretPosition[3]));
 				this.boundsInScene = webView.localToScene(webView.getBoundsInLocal());
 				this.scrollHPosition = getHScrollValue(webView);
 				this.scrollVPosition = getVScrollValue(webView);
@@ -328,7 +365,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	public int getCaretPosition() {
 		updateCaretAndScrollPosition();
 		String txt = getText();
-		String[] lines = txt.split(EOL);
+		String[] lines = txt.split(EOL, -1);
 		int length = 0;
 		for (int i = 0; i < caretLinePos; i++) {
 			length = length + lines[i].length() + EOL.length();
@@ -412,12 +449,25 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 						// found
 						break;
 					}
+				} else if (tag.equals("<br>")) {
+					// special case <br></div> ! we must return the index before
+					// the <br> !
+					int newIndex = html.indexOf('>', index) + 1;
+					if (html.charAt(newIndex) == '<') {
+						int newEndIndex = html.indexOf('>', newIndex);
+						String newTag = html.substring(newIndex, newEndIndex + 1);
+						if (newTag.equals("</div>")) {
+							if (calculateOffset + 1 == offset) {
+								return index;
+							}
+						}
+					}
 				}
 				index = endIndex;
 			} else if (html.charAt(index) == '&') {
 				int endIndex = html.indexOf(';', index);
 				String tag = html.substring(index, endIndex + 1);
-				if (tag.equals("&gt;") || tag.equals("&lt;")) {
+				if (tag.equals("&gt;") || tag.equals("&lt;") || tag.equals("&nbsp;")) {
 					calculateOffset++;
 					if (calculateOffset == offset) {
 						// found
@@ -436,14 +486,14 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		}
 		return index;
 	}
-	
+
 	private void simulateClick(double x, double y, double screenX, double screenY) {
-		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED, boundsInScene.getMinX() + x, boundsInScene.getMinY() + y, screenX,
-				screenY, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, true,
-				false, false, null));
-		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED, boundsInScene.getMinX() + x, boundsInScene.getMinY() + y, screenX,
-				screenY, MouseButton.PRIMARY, 1, false, false, false, false, false, false, false, true,
-				false, false, null));
+		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED, boundsInScene.getMinX() + x,
+				boundsInScene.getMinY() + y, screenX, screenY, MouseButton.PRIMARY, 1, false, false, false, false, true,
+				false, false, true, false, false, null));
+		webView.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED, boundsInScene.getMinX() + x,
+				boundsInScene.getMinY() + y, screenX, screenY, MouseButton.PRIMARY, 1, false, false, false, false,
+				false, false, false, true, false, false, null));
 	}
 
 	/**
@@ -454,6 +504,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		html = html.replaceAll("<div>", "");
 		html = html.replaceAll("</div>", System.lineSeparator());
 		html = html.replaceAll("\\<.*?>", "");
+		html = html.replaceAll("&nbsp;", " ");
 		html = html.replaceAll("&lt;", "<");
 		html = html.replaceAll("&gt;", ">");
 		return html;
@@ -552,6 +603,20 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 */
 	public WCPoint getMouseBounds() {
 		return new WCPoint((float) mouseScreenX, (float) mouseScreenY);
+	}
+
+	/**
+	 * Insert the message at the offset position and move the caret of 'length'
+	 * of message character.
+	 * 
+	 * @param offset
+	 *            the offset
+	 * @param msg
+	 *            the message
+	 */
+	public void insertTextAndUpdateCaretPosition(int offset, String msg) {
+		this.autoCompletionMessage = msg;
+		insertText(offset, msg);
 	}
 
 }

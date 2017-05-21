@@ -56,8 +56,12 @@ public class StyledEditorCustom extends Control {
 		skin().println(msg);
 	}
 
-	public void insertText(int offsets, String msg) {
-		skin().insertText(offsets, msg);
+	public void insertText(int offset, String msg) {
+		skin().insertText(offset, msg);
+	}
+	
+	public void insertTextAndUpdateCaretPosition(int offset, String msg) {
+		skin().insertTextAndUpdateCaretPosition(offset, msg);
 	}
 
 	public void replaceText(int start, int end, String msg) {

@@ -206,7 +206,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 										});
 									}
 									//Arbitrary time, we hope that the thread will be ready to receive new events !
-								}, 100, TimeUnit.MILLISECONDS);
+								}, 50, TimeUnit.MILLISECONDS);
 							}
 							autoCompletionMessage = null;
 						}
@@ -255,7 +255,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		}));
 
 		setHTMLText(cachedHTMLText);
-		webView.setFocusTraversable(true);
+		webView.setFocusTraversable(false);
 		gridPane.getChildren().addListener(itemsListener);
 	}
 
@@ -387,7 +387,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 *            the message to print
 	 */
 	public void println(String msg) {
-		String stringx = "<div>" + msg + "</div>";
+		String stringx = "<div>" + parseToHTML(msg) + "</div>";
 		String html = getHTMLText();
 		int endIndex = html.indexOf("</body></html>");
 		setHTMLText(html.substring(0, endIndex) + stringx + html.substring(endIndex));
@@ -404,7 +404,19 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	public void insertText(int offset, String msg) {
 		int htmlOffset = getCorrespondingOffset(offset);
 		String html = getHTMLText();
-		setHTMLText(html.substring(0, htmlOffset) + msg + html.substring(htmlOffset));
+		setHTMLText(html.substring(0, htmlOffset) + parseToHTML(msg) + html.substring(htmlOffset));
+	}
+	
+	/**
+	 * @param msg message
+	 * @return String with encoded special characters.
+	 */
+	private String parseToHTML(String msg) {
+		msg = msg.replaceAll("&", "&amp;");
+		msg = msg.replaceAll(" ", "&nbsp;");
+		msg = msg.replaceAll("<", "&lt;");
+		msg = msg.replaceAll(">", "&gt;");
+		return msg;
 	}
 
 	/**
@@ -422,7 +434,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		int startHtmlOffset = getCorrespondingOffset(start);
 		int endHtmlOffset = getCorrespondingOffset(end);
 		String html = getHTMLText();
-		setHTMLText(html.substring(0, startHtmlOffset) + msg + html.substring(endHtmlOffset));
+		setHTMLText(html.substring(0, startHtmlOffset) + parseToHTML(msg) + html.substring(endHtmlOffset));
 		execute();
 	}
 
@@ -435,6 +447,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 */
 	public int getCorrespondingOffset(int offset) {
 		String html = getHTMLText();
+		System.out.println(html);
 		String toFind = "contenteditable=\"true\">";
 		int index = html.indexOf(toFind) + toFind.length();
 		int calculateOffset = -1;

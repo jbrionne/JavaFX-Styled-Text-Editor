@@ -118,6 +118,8 @@ public class StyledEditorBehaviorCustom extends BehaviorBase<StyledEditorCustom>
 			if (templateIndex >= templates.size()) {
 				reInitTemplates();
 			}
+		} else if (e.getCode() == KeyCode.TAB) {
+			getControl().insertTextAndUpdateCaretPosition(getControl().getCaretPosition(), "    ");
 		}
 	}
 

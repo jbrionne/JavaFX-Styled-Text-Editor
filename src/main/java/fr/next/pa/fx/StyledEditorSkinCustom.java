@@ -467,7 +467,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 			} else if (html.charAt(index) == '&') {
 				int endIndex = html.indexOf(';', index);
 				String tag = html.substring(index, endIndex + 1);
-				if (tag.equals("&gt;") || tag.equals("&lt;") || tag.equals("&nbsp;")) {
+				if (tag.equals("&gt;") || tag.equals("&lt;") || tag.equals("&nbsp;") || tag.equals("&amp;")) {
 					calculateOffset++;
 					if (calculateOffset == offset) {
 						// found
@@ -507,6 +507,7 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		html = html.replaceAll("&nbsp;", " ");
 		html = html.replaceAll("&lt;", "<");
 		html = html.replaceAll("&gt;", ">");
+		html = html.replaceAll("&amp;", "&");
 		return html;
 	}
 

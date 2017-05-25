@@ -270,8 +270,10 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 			if (caretIndex != -1) {
 				String caretInfo = renderTree.substring(caretIndex);
 				String info[] = caretInfo.split(" ");
-				caretColPos = Integer.valueOf(info[2]);
-				caretLinePos = Integer.valueOf(info[9]);
+				if(info.length > 9) {
+					caretColPos = Integer.valueOf(info[2]);
+					caretLinePos = Integer.valueOf(info[9]);
+				}
 				this.previousCaretPosition = webPage.getClientTextLocation(0);
 				this.caretBounds = webPage.getPageClient()
 						.windowToScreen(new WCPoint(previousCaretPosition[0] + previousCaretPosition[2],
@@ -447,57 +449,69 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 	 */
 	public int getCorrespondingOffset(int offset) {
 		String html = getHTMLText();
-		System.out.println(html);
 		String toFind = "contenteditable=\"true\">";
-		int index = html.indexOf(toFind) + toFind.length();
-		int calculateOffset = -1;
-		while (calculateOffset < offset) {
-			if (html.charAt(index) == '<') {
-				int endIndex = html.indexOf('>', index);
-				String tag = html.substring(index, endIndex + 1);
-				if (tag.equals("</div>")) { // || tag.equals("<br>") ) {
-					// new line
-					calculateOffset = calculateOffset + EOL.length();
-					if (calculateOffset == offset) {
-						// found
-						break;
-					}
-				} else if (tag.equals("<br>")) {
-					// special case <br></div> ! we must return the index before
-					// the <br> !
-					int newIndex = html.indexOf('>', index) + 1;
-					if (html.charAt(newIndex) == '<') {
-						int newEndIndex = html.indexOf('>', newIndex);
-						String newTag = html.substring(newIndex, newEndIndex + 1);
-						if (newTag.equals("</div>")) {
-							if (calculateOffset + 1 == offset) {
-								return index;
+		int startIndex = html.indexOf(toFind) + toFind.length();
+		int index = startIndex;
+		//special case where the text is clear, then we set a <div> tag.
+		if(!html.contains("<div>") || !html.substring(index, index + "<div>".length()).equals("<div>")) {
+			String stringx = "<div>" + parseToHTML(getText()) + "</div>";
+			int endIndex = html.indexOf("</body></html>"); 
+			html = html.substring(0, index) + stringx + html.substring(endIndex);
+			setHTMLText(html); 
+			System.out.println(html);
+		}
+		try {
+			int calculateOffset = -1;
+			while (calculateOffset < offset) {
+				if (html.charAt(index) == '<') {
+					int endIndex = html.indexOf('>', index);
+					String tag = html.substring(index, endIndex + 1);
+					if (tag.equals("</div>")) { // || tag.equals("<br>") ) {
+						// new line
+						calculateOffset = calculateOffset + EOL.length();
+						if (calculateOffset == offset) {
+							// found
+							break;
+						}
+					} else if (tag.equals("<br>")) {
+						// special case <br></div> ! we must return the index before
+						// the <br> !
+						int newIndex = html.indexOf('>', index) + 1;
+						if (html.charAt(newIndex) == '<') {
+							int newEndIndex = html.indexOf('>', newIndex);
+							String newTag = html.substring(newIndex, newEndIndex + 1);
+							if (newTag.equals("</div>")) {
+								if (calculateOffset + 1 == offset) {
+									return index;
+								}
 							}
 						}
-					}
-				}
-				index = endIndex;
-			} else if (html.charAt(index) == '&') {
-				int endIndex = html.indexOf(';', index);
-				String tag = html.substring(index, endIndex + 1);
-				if (tag.equals("&gt;") || tag.equals("&lt;") || tag.equals("&nbsp;") || tag.equals("&amp;")) {
-					calculateOffset++;
-					if (calculateOffset == offset) {
-						// found
-						break;
-					}
+					} 
 					index = endIndex;
+				} else if (html.charAt(index) == '&') {
+					int endIndex = html.indexOf(';', index);
+					String tag = html.substring(index, endIndex + 1);
+					if (tag.equals("&gt;") || tag.equals("&lt;") || tag.equals("&nbsp;") || tag.equals("&amp;")) {
+						calculateOffset++;
+						if (calculateOffset == offset) {
+							// found
+							break;
+						}
+						index = endIndex;
+					}
+				} else {
+					calculateOffset++;
 				}
-			} else {
-				calculateOffset++;
+				if (calculateOffset == offset) {
+					// found
+					break;
+				}
+				index++;
 			}
-			if (calculateOffset == offset) {
-				// found
-				break;
-			}
-			index++;
+			return index;
+		} catch(StringIndexOutOfBoundsException e) {
+			return startIndex + "<div>".length();
 		}
-		return index;
 	}
 
 	private void simulateClick(double x, double y, double screenX, double screenY) {

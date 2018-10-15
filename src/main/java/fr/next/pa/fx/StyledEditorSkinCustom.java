@@ -257,6 +257,8 @@ public class StyledEditorSkinCustom extends BehaviorSkinBase<StyledEditorCustom,
 		setHTMLText(cachedHTMLText);
 		webView.setFocusTraversable(false);
 		gridPane.getChildren().addListener(itemsListener);
+		
+		execute();
 	}
 
 	/**

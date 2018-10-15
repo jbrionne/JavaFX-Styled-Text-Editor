@@ -1,6 +1,5 @@
 
-# Text personal assistant editor
-
+# JavaFX-Styled-Text-Editor
 
 You need a simple editor, multiplatform, with the possibility to implement your own system of autocompletion, highlights, tooltips, selection refactor then 'Text personnal assitant editor' is your solution.
 
